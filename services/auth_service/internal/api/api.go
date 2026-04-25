@@ -25,7 +25,7 @@ func NewHandler(service *service.Service, httpLogger *zap.Logger) *Handler {
 func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 	var regData models.RegRequest
 	if err := json.NewDecoder(r.Body).Decode(&regData); err != nil {
-		http.Error(w, "invalid data", 400)
+		http.Error(w, models.InvalidData.Error(), 400)
 		return
 	}
 
@@ -43,7 +43,34 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	refreshToken, accessToken, err := h.service.GenerateJWTTokens(regData.Email)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	if err := json.NewEncoder(w).Encode(models.RegResp{
+		Status: "success",
+	}); err != nil {
+		http.Error(w, models.ServersError.Error(), 500)
+		return
+	}
+}
+
+func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
+	var logData models.LoginRequest
+	if err := json.NewDecoder(r.Body).Decode(&logData); err != nil {
+		http.Error(w, models.InvalidData.Error(), 400)
+		return
+	}
+
+	isExists, err := h.service.Login(logData.Email, logData.Password)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	if !isExists {
+		http.Error(w, models.UnknownUser.Error(), 404)
+		return
+	}
+
+	refreshToken, accessToken, err := h.service.GenerateJWTTokens(logData.Email)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return
@@ -51,7 +78,7 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(201)
-	if err := json.NewEncoder(w).Encode(models.RegResp{
+	if err := json.NewEncoder(w).Encode(models.LoginResp{
 		Status:  "success",
 		Refresh: refreshToken,
 		Access:  accessToken,

@@ -61,3 +61,16 @@ func (db *Database) Register(name, email, password string) error {
 	}
 	return nil
 }
+
+func (db *Database) Login(email, password string) (bool, error) {
+	isExists := false
+
+	ctx, stop := context.WithTimeout(db.ctx, 2*time.Second)
+	defer stop()
+
+	if err := db.pool.QueryRow(ctx, "SELECT EXISTS(SELECT TRUE FROM users WHERE email=$1 AND password=$2)", email, password).Scan(&isExists); err != nil {
+		return false, models.ServersError
+	}
+
+	return isExists, nil
+}

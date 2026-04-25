@@ -53,3 +53,7 @@ func (s *Service) Register(name, email, password string) error {
 	}
 	return s.database.Register(name, email, password)
 }
+
+func (s *Service) Login(email, password string) (bool, error) {
+	return s.database.Login(email, password)
+}

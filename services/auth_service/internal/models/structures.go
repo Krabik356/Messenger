@@ -7,6 +7,15 @@ type RegRequest struct {
 }
 
 type RegResp struct {
+	Status string `json:"status"`
+}
+
+type LoginRequest struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+type LoginResp struct {
 	Status  string `json:"status"`
 	Refresh string `json:"refresh"`
 	Access  string `json:"access"`
