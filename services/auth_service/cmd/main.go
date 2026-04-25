@@ -58,6 +58,7 @@ func (s *Server) Run() {
 	s.router.Use(s.handler.LoggerMiddleware)
 	s.router.Post("/register", s.handler.Register)
 	s.router.Post("/login", s.handler.Login)
+	s.router.Get("/refresh", s.handler.Refresh)
 	//register handlers
 	s.serverLogger.Info("server started",
 		zap.String("start_time", time.Now().Format(time.RFC3339)),
