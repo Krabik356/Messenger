@@ -34,11 +34,11 @@ func GenerateToken(ctx context.Context, email, tokenType string) (string, error)
 
 func IsValidToken(strToken string) (bool, string, error) {
 	token, err := jwt.Parse(strToken, func(token *jwt.Token) (interface{}, error) { return []byte("krabs_secret"), nil })
-	if token.Method != jwt.SigningMethodHS256 {
-		return false, "", models.InvalidToken
-	}
 	if err != nil {
 		return false, "", models.ServersError
+	}
+	if token.Method != jwt.SigningMethodHS256 {
+		return false, "", models.InvalidToken
 	}
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {

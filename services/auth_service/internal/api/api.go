@@ -92,6 +92,10 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) Refresh(w http.ResponseWriter, r *http.Request) {
 	authorData := r.Header.Get("Authorization")
 	authorDataSlice := strings.Split(authorData, " ")
+	if len(authorDataSlice) < 2 {
+		http.Error(w, models.InvalidToken.Error(), 400)
+		return
+	}
 	if authorDataSlice[0] != "Bearer" {
 		http.Error(w, models.InvalidToken.Error(), 400)
 		return
