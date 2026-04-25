@@ -77,7 +77,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(201)
+	w.WriteHeader(200)
 	if err := json.NewEncoder(w).Encode(models.LoginResp{
 		Status:  "success",
 		Refresh: refreshToken,
