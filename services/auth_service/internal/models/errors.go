@@ -6,6 +6,7 @@ var InvalidName = errors.New("invalid name")
 var InvalidPassword = errors.New("invalid password")
 var InvalidEmail = errors.New("invalid email")
 var InvalidData = errors.New("invalid data")
+var InvalidToken = errors.New("invalid token")
 
 var NullName = errors.New("null name")
 var NullPassword = errors.New("null password")

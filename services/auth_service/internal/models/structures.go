@@ -20,3 +20,9 @@ type LoginResp struct {
 	Refresh string `json:"refresh"`
 	Access  string `json:"access"`
 }
+
+type RefreshResp struct {
+	Status  string `json:"status"`
+	Refresh string `json:"refresh"`
+	Access  string `json:"access"`
+}

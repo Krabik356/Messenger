@@ -31,3 +31,18 @@ func GenerateToken(ctx context.Context, email, tokenType string) (string, error)
 
 	return strToken, nil
 }
+
+func IsValidToken(strToken string) (bool, string, error) {
+	token, err := jwt.Parse(strToken, func(token *jwt.Token) (interface{}, error) { return []byte("krabs_secret"), nil })
+	if token.Method != jwt.SigningMethodHS256 {
+		return false, "", models.InvalidToken
+	}
+	if err != nil {
+		return false, "", models.ServersError
+	}
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return false, "", models.ServersError
+	}
+	return token.Valid, claims["email"].(string), nil
+}

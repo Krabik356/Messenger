@@ -57,3 +57,19 @@ func (s *Service) Register(name, email, password string) error {
 func (s *Service) Login(email, password string) (bool, error) {
 	return s.database.Login(email, password)
 }
+
+func (s *Service) IsValidToken(strToken string) (bool, string, error) {
+	isValid, email, err := token.IsValidToken(strToken)
+	if err != nil {
+		return false, "", err
+	}
+	if !isValid {
+		return false, email, nil
+	}
+
+	isValid2, err := s.redi.IsValidToken(strToken, email)
+	if err != nil {
+		return false, email, err
+	}
+	return isValid2, email, nil
+}

@@ -34,3 +34,13 @@ func (r *Redis) SaveRefreshToken(email, token string) error {
 	}
 	return nil
 }
+
+func (r *Redis) IsValidToken(strToken, email string) (bool, error) {
+	ctxTime, stop := context.WithTimeout(r.ctx, 2*time.Second)
+	defer stop()
+	token, err := r.rdb.Get(ctxTime, fmt.Sprintf("user:%s", email)).Result()
+	if err != nil {
+		return false, models.ServersError
+	}
+	return token == strToken, nil
+}
