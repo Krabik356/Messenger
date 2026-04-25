@@ -3,19 +3,39 @@ package service
 import (
 	"RegistrationForMessenger/internal/database"
 	"RegistrationForMessenger/internal/models"
+	"RegistrationForMessenger/internal/redi"
+	"RegistrationForMessenger/internal/token"
 	"context"
 )
 
 type Service struct {
 	database *database.Database
+	redi     *redi.Redis
 	ctx      context.Context
 }
 
-func NewService(ctx context.Context, database *database.Database) *Service {
+func NewService(ctx context.Context, database *database.Database, redi *redi.Redis) *Service {
 	return &Service{
 		database: database,
+		redi:     redi,
 		ctx:      ctx,
 	}
+}
+
+func (s *Service) GenerateJWTTokens(email string) (string, string, error) {
+	refreshToken, err := token.GenerateToken(s.ctx, email, "refresh")
+	if err != nil {
+		return "", "", err
+	}
+	accessToken, err := token.GenerateToken(s.ctx, email, "access")
+	if err != nil {
+		return "", "", err
+	}
+	if err := s.redi.SaveRefreshToken(email, refreshToken); err != nil {
+		return "", "", err
+	}
+
+	return refreshToken, accessToken, nil
 }
 
 func (s *Service) Register(name, email, password string) error {

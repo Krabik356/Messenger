@@ -39,12 +39,18 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	//JWT
+	refreshToken, accessToken, err := h.service.GenerateJWTTokens(regData.Email)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(201)
 	if err := json.NewEncoder(w).Encode(models.RegResp{
-		Status: "success",
+		Status:  "success",
+		Refresh: refreshToken,
+		Access:  accessToken,
 	}); err != nil {
 		http.Error(w, models.ServersError.Error(), 500)
 		return

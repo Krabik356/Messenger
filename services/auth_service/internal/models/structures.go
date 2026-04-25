@@ -7,5 +7,7 @@ type RegRequest struct {
 }
 
 type RegResp struct {
-	Status string `json:"status"`
+	Status  string `json:"status"`
+	Refresh string `json:"refresh"`
+	Access  string `json:"access"`
 }

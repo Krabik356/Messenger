@@ -13,3 +13,4 @@ var NullEmail = errors.New("null email")
 var AlreadyExists = errors.New("already exists")
 
 var ServersError = errors.New("servers error")
+var InvalidTokenType = errors.New("invalid token type")

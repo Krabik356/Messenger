@@ -1,6 +1,10 @@
 package main
 
 import (
+	"RegistrationForMessenger/internal/api"
+	"RegistrationForMessenger/internal/database"
+	"RegistrationForMessenger/internal/redi"
+	"RegistrationForMessenger/internal/service"
 	"context"
 	"net/http"
 	"os"
@@ -11,25 +15,38 @@ import (
 )
 
 type Server struct {
-	server *http.Server
-	router *chi.Mux
-	ctx    context.Context
+	server   *http.Server
+	router   *chi.Mux
+	database *database.Database
+	redi     *redi.Redis
+	service  *service.Service
+	handler  *api.Handler
+	ctx      context.Context
 }
 
 func NewServer(ctx context.Context) *Server {
+	redi := redi.NewRedis(ctx)
+	database := database.NewDatabase(ctx)
+	service := service.NewService(ctx, database, redi)
+	handler := api.NewHandler(service)
 	router := chi.NewRouter()
 	server := &http.Server{
 		Addr:    ":8080",
 		Handler: router,
 	}
 	return &Server{
-		server: server,
-		router: router,
-		ctx:    ctx,
+		server:   server,
+		router:   router,
+		database: database,
+		redi:     redi,
+		service:  service,
+		handler:  handler,
+		ctx:      ctx,
 	}
 }
 
 func (s *Server) Run(ctx context.Context) {
+	s.router.Post("/register", s.handler.Register)
 	//register handlers
 	if err := s.server.ListenAndServe(); err != nil {
 		//log
