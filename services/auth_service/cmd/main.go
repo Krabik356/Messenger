@@ -1,11 +1,11 @@
 package main
 
 import (
-	"RegistrationForMessenger/internal/api"
-	"RegistrationForMessenger/internal/database"
-	"RegistrationForMessenger/internal/logger"
-	"RegistrationForMessenger/internal/redi"
-	"RegistrationForMessenger/internal/service"
+	"Messenger/internal/api"
+	"Messenger/internal/database"
+	"Messenger/internal/logger"
+	"Messenger/internal/redi"
+	"Messenger/internal/service"
 	"context"
 	"errors"
 	"net/http"
@@ -52,35 +52,48 @@ func NewServer(ctx context.Context) *Server {
 	}
 }
 
-func (s *Server) Run(ctx context.Context) {
+func (s *Server) Run() {
 	s.startTime = time.Now()
-	s.router.Use(s.handler.CORS)
+	//s.router.Use(s.handler.CORS) ------------------------------------------UNCOMMENT!!!
 	s.router.Use(s.handler.LoggerMiddleware)
 	s.router.Post("/register", s.handler.Register)
 	//register handlers
-	s.serverLogger.Info("log",
-		zap.String("status", "started"),
-		zap.Time("start_time", time.Now()),
+	s.serverLogger.Info("server started",
+		zap.String("start_time", time.Now().Format(time.RFC3339)),
 	)
 	if err := s.server.ListenAndServe(); err != nil {
-		//log
-		panic(err)
+		if !errors.Is(err, http.ErrServerClosed) {
+			panic(err)
+		}
 	}
 }
 
 func (s *Server) Close() {
 	ctxTime, stop := context.WithTimeout(context.Background(), 5*time.Second)
 	defer stop()
+	statusField := zap.String("status", "stopped_gracefully")
+	isGrace := true
+
 	if err := s.server.Shutdown(ctxTime); err != nil {
-		statusField := zap.String("status", "stopped_badly")
-		if errors.Is(err, http.ErrServerClosed) {
-			statusField = zap.String("status", "stopped_gracefully")
+		if !errors.Is(err, http.ErrServerClosed) {
+			statusField = zap.String("status", "stopped_badly")
+			isGrace = false
 		}
-		s.serverLogger.Info("log",
-			statusField,
-			zap.Duration("work_duration", time.Since(s.startTime)),
-		)
 	}
+	if err := s.service.Close(); err != nil {
+		statusField = zap.String("status", "stopped_badly")
+		isGrace = false
+	}
+
+	fields := []zap.Field{
+		statusField,
+		zap.Duration("work_duration", time.Since(s.startTime)),
+	}
+	if !isGrace {
+		s.serverLogger.Error("server stopped", fields...)
+		return
+	}
+	s.serverLogger.Info("server stopped", fields...)
 	//close everything
 }
 
@@ -89,9 +102,9 @@ func main() {
 	defer stop()
 
 	server := NewServer(ctx)
+	go server.Run()
 
 	<-ctx.Done()
 
 	server.Close()
-
 }

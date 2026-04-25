@@ -1,7 +1,7 @@
 package database
 
 import (
-	"RegistrationForMessenger/internal/models"
+	"Messenger/internal/models"
 	"context"
 	"errors"
 	"time"
@@ -24,6 +24,10 @@ func NewDatabase(ctx context.Context) *Database {
 		pool: pool,
 		ctx:  ctx,
 	}
+}
+
+func (db *Database) Close() {
+	db.pool.Close()
 }
 
 func (db *Database) Register(name, email, password string) error {

@@ -1,7 +1,7 @@
 package token
 
 import (
-	"RegistrationForMessenger/internal/models"
+	"Messenger/internal/models"
 	"context"
 	"time"
 

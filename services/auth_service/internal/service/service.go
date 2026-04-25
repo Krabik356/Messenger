@@ -1,10 +1,10 @@
 package service
 
 import (
-	"RegistrationForMessenger/internal/database"
-	"RegistrationForMessenger/internal/models"
-	"RegistrationForMessenger/internal/redi"
-	"RegistrationForMessenger/internal/token"
+	"Messenger/internal/database"
+	"Messenger/internal/models"
+	"Messenger/internal/redi"
+	"Messenger/internal/token"
 	"context"
 )
 
@@ -20,6 +20,11 @@ func NewService(ctx context.Context, database *database.Database, redi *redi.Red
 		redi:     redi,
 		ctx:      ctx,
 	}
+}
+
+func (s *Service) Close() error {
+	s.database.Close()
+	return s.redi.Close()
 }
 
 func (s *Service) GenerateJWTTokens(email string) (string, string, error) {

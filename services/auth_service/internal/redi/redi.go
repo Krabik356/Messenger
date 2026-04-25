@@ -1,7 +1,7 @@
 package redi
 
 import (
-	"RegistrationForMessenger/internal/models"
+	"Messenger/internal/models"
 	"context"
 	"fmt"
 	"time"
@@ -20,6 +20,10 @@ func NewRedis(ctx context.Context) *Redis {
 		rdb: rdb,
 		ctx: ctx,
 	}
+}
+
+func (r *Redis) Close() error {
+	return r.rdb.Close()
 }
 
 func (r *Redis) SaveRefreshToken(email, token string) error {

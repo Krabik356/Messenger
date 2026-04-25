@@ -1,8 +1,8 @@
 package api
 
 import (
-	"RegistrationForMessenger/internal/models"
-	"RegistrationForMessenger/internal/service"
+	"Messenger/internal/models"
+	"Messenger/internal/service"
 	"encoding/json"
 	"errors"
 	"net/http"
