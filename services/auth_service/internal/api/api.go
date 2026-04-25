@@ -6,15 +6,19 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+
+	"go.uber.org/zap"
 )
 
 type Handler struct {
-	service *service.Service
+	service    *service.Service
+	httpLogger *zap.Logger
 }
 
-func NewHandler(service *service.Service) *Handler {
+func NewHandler(service *service.Service, httpLogger *zap.Logger) *Handler {
 	return &Handler{
-		service: service,
+		service:    service,
+		httpLogger: httpLogger,
 	}
 }
 
