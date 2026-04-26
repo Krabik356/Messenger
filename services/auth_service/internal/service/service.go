@@ -11,14 +11,12 @@ import (
 type Service struct {
 	database *database.Database
 	redi     *redi.Redis
-	ctx      context.Context
 }
 
-func NewService(ctx context.Context, database *database.Database, redi *redi.Redis) *Service {
+func NewService(database *database.Database, redi *redi.Redis) *Service {
 	return &Service{
 		database: database,
 		redi:     redi,
-		ctx:      ctx,
 	}
 }
 
@@ -27,23 +25,23 @@ func (s *Service) Close() error {
 	return s.redi.Close()
 }
 
-func (s *Service) GenerateJWTTokens(email string) (string, string, error) {
-	refreshToken, err := token.GenerateToken(s.ctx, email, "refresh")
+func (s *Service) GenerateJWTTokens(ctx context.Context, email string) (string, string, error) {
+	refreshToken, err := token.GenerateToken(ctx, email, "refresh")
 	if err != nil {
 		return "", "", err
 	}
-	accessToken, err := token.GenerateToken(s.ctx, email, "access")
+	accessToken, err := token.GenerateToken(ctx, email, "access")
 	if err != nil {
 		return "", "", err
 	}
-	if err := s.redi.SaveRefreshToken(email, refreshToken); err != nil {
+	if err := s.redi.SaveRefreshToken(ctx, email, refreshToken); err != nil {
 		return "", "", err
 	}
 
 	return refreshToken, accessToken, nil
 }
 
-func (s *Service) Register(name, email, password string) error {
+func (s *Service) Register(ctx context.Context, name, email, password string) error {
 	if len(name) < 3 || len(name) > 10 {
 		return models.InvalidName
 	} else if len(email) < 5 || len(email) > 20 {
@@ -51,14 +49,14 @@ func (s *Service) Register(name, email, password string) error {
 	} else if len(password) < 5 || len(password) > 20 {
 		return models.InvalidPassword
 	}
-	return s.database.Register(name, email, password)
+	return s.database.Register(ctx, name, email, password)
 }
 
-func (s *Service) Login(email, password string) (bool, error) {
-	return s.database.Login(email, password)
+func (s *Service) Login(ctx context.Context, email, password string) (bool, error) {
+	return s.database.Login(ctx, email, password)
 }
 
-func (s *Service) IsValidToken(strToken string) (bool, string, error) {
+func (s *Service) IsValidToken(ctx context.Context, strToken string) (bool, string, error) {
 	isValid, email, err := token.IsValidToken(strToken)
 	if err != nil {
 		return false, "", err
@@ -67,7 +65,7 @@ func (s *Service) IsValidToken(strToken string) (bool, string, error) {
 		return false, email, nil
 	}
 
-	isValid2, err := s.redi.IsValidToken(strToken, email)
+	isValid2, err := s.redi.IsValidToken(ctx, strToken, email)
 	if err != nil {
 		return false, email, err
 	}

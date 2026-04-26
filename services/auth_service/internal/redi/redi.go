@@ -11,14 +11,12 @@ import (
 
 type Redis struct {
 	rdb *redis.Client
-	ctx context.Context
 }
 
-func NewRedis(ctx context.Context) *Redis {
+func NewRedis() *Redis {
 	rdb := redis.NewClient(&redis.Options{Addr: "localhost:6379"})
 	return &Redis{
 		rdb: rdb,
-		ctx: ctx,
 	}
 }
 
@@ -26,8 +24,8 @@ func (r *Redis) Close() error {
 	return r.rdb.Close()
 }
 
-func (r *Redis) SaveRefreshToken(email, token string) error {
-	ctxTime, stop := context.WithTimeout(r.ctx, 2*time.Second)
+func (r *Redis) SaveRefreshToken(ctx context.Context, email, token string) error {
+	ctxTime, stop := context.WithTimeout(ctx, 2*time.Second)
 	defer stop()
 	if err := r.rdb.Set(ctxTime, fmt.Sprintf("user:%s", email), token, 24*7*time.Hour).Err(); err != nil {
 		return models.ServersError
@@ -35,8 +33,8 @@ func (r *Redis) SaveRefreshToken(email, token string) error {
 	return nil
 }
 
-func (r *Redis) IsValidToken(strToken, email string) (bool, error) {
-	ctxTime, stop := context.WithTimeout(r.ctx, 2*time.Second)
+func (r *Redis) IsValidToken(ctx context.Context, strToken, email string) (bool, error) {
+	ctxTime, stop := context.WithTimeout(ctx, 2*time.Second)
 	defer stop()
 	token, err := r.rdb.Get(ctxTime, fmt.Sprintf("user:%s", email)).Result()
 	if err != nil {

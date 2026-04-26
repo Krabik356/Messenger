@@ -12,17 +12,15 @@ import (
 
 type Database struct {
 	pool *pgxpool.Pool
-	ctx  context.Context
 }
 
-func NewDatabase(ctx context.Context) *Database {
-	pool, err := pgxpool.New(ctx, "postgres://postgres:111222035@localhost:5432/check")
+func NewDatabase() *Database {
+	pool, err := pgxpool.New(context.Background(), "postgres://postgres:111222035@localhost:5432/check")
 	if err != nil {
 		panic(err)
 	}
 	return &Database{
 		pool: pool,
-		ctx:  ctx,
 	}
 }
 
@@ -30,10 +28,10 @@ func (db *Database) Close() {
 	db.pool.Close()
 }
 
-func (db *Database) Register(name, email, password string) error {
-	ctx, stop := context.WithTimeout(db.ctx, 2*time.Second)
+func (db *Database) Register(ctx context.Context, name, email, password string) error {
+	ctxTime, stop := context.WithTimeout(ctx, 2*time.Second)
 	defer stop()
-	if _, err := db.pool.Exec(ctx, "INSERT INTO users(name, email, password) VALUES($1, $2, $3)", name, email, password); err != nil {
+	if _, err := db.pool.Exec(ctxTime, "INSERT INTO users(name, email, password) VALUES($1, $2, $3)", name, email, password); err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) {
 			switch pgErr.Code {
@@ -62,13 +60,13 @@ func (db *Database) Register(name, email, password string) error {
 	return nil
 }
 
-func (db *Database) Login(email, password string) (bool, error) {
+func (db *Database) Login(ctx context.Context, email, password string) (bool, error) {
 	isExists := false
 
-	ctx, stop := context.WithTimeout(db.ctx, 2*time.Second)
+	ctxTime, stop := context.WithTimeout(ctx, 2*time.Second)
 	defer stop()
 
-	if err := db.pool.QueryRow(ctx, "SELECT EXISTS(SELECT TRUE FROM users WHERE email=$1 AND password=$2)", email, password).Scan(&isExists); err != nil {
+	if err := db.pool.QueryRow(ctxTime, "SELECT EXISTS(SELECT TRUE FROM users WHERE email=$1 AND password=$2)", email, password).Scan(&isExists); err != nil {
 		return false, models.ServersError
 	}
 

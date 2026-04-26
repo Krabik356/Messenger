@@ -30,7 +30,7 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.service.Register(regData.Name, regData.Email, regData.Password); err != nil {
+	if err := h.service.Register(r.Context(), regData.Name, regData.Email, regData.Password); err != nil {
 		switch {
 		case errors.Is(err, models.ServersError):
 			http.Error(w, err.Error(), 500)
@@ -61,7 +61,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	isExists, err := h.service.Login(logData.Email, logData.Password)
+	isExists, err := h.service.Login(r.Context(), logData.Email, logData.Password)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return
@@ -71,7 +71,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	refreshToken, accessToken, err := h.service.GenerateJWTTokens(logData.Email)
+	refreshToken, accessToken, err := h.service.GenerateJWTTokens(r.Context(), logData.Email)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return
@@ -101,7 +101,7 @@ func (h *Handler) Refresh(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	isValid, email, err := h.service.IsValidToken(authorDataSlice[1])
+	isValid, email, err := h.service.IsValidToken(r.Context(), authorDataSlice[1])
 	if err != nil {
 		switch {
 		case errors.Is(err, models.InvalidToken):
@@ -116,7 +116,7 @@ func (h *Handler) Refresh(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	refreshToken, accessToken, err := h.service.GenerateJWTTokens(email)
+	refreshToken, accessToken, err := h.service.GenerateJWTTokens(r.Context(), email)
 	if err != nil {
 		http.Error(w, err.Error(), 500)
 		return

@@ -25,15 +25,14 @@ type Server struct {
 	service      *service.Service
 	handler      *api.Handler
 	serverLogger *zap.Logger
-	ctx          context.Context
 	startTime    time.Time
 }
 
-func NewServer(ctx context.Context) *Server {
+func NewServer() *Server {
 	logger := logger.NewLogger()
-	redi := redi.NewRedis(ctx)
-	database := database.NewDatabase(ctx)
-	service := service.NewService(ctx, database, redi)
+	redi := redi.NewRedis()
+	database := database.NewDatabase()
+	service := service.NewService(database, redi)
 	handler := api.NewHandler(service, logger.HttpLogger)
 	router := chi.NewRouter()
 	server := &http.Server{
@@ -48,7 +47,6 @@ func NewServer(ctx context.Context) *Server {
 		service:      service,
 		handler:      handler,
 		serverLogger: logger.ServerLogger,
-		ctx:          ctx,
 	}
 }
 
@@ -103,7 +101,7 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
 
-	server := NewServer(ctx)
+	server := NewServer()
 	go server.Run()
 
 	<-ctx.Done()
