@@ -22,14 +22,10 @@ import (
 type Server struct {
 	server       *http.Server
 	router       *chi.Mux
-	database     *database.Database
-	redi         *redi.Redis
-	token        *token.Token
 	service      *service.Service
 	handler      *api.Handler
 	serverLogger *zap.Logger
 	startTime    time.Time
-	config       *config.Config
 }
 
 func NewServer() *Server {
@@ -48,12 +44,9 @@ func NewServer() *Server {
 	return &Server{
 		server:       server,
 		router:       router,
-		database:     database,
-		redi:         redi,
 		service:      service,
 		handler:      handler,
 		serverLogger: logger.ServerLogger,
-		config:       config,
 	}
 }
 
