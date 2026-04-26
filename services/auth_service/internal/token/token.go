@@ -8,7 +8,17 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-func GenerateToken(ctx context.Context, email, tokenType string) (string, error) {
+type Token struct {
+	tokenSecret string
+}
+
+func NewToken(tokenSecret string) *Token {
+	return &Token{
+		tokenSecret: tokenSecret,
+	}
+}
+
+func (t *Token) GenerateToken(ctx context.Context, email, tokenType string) (string, error) {
 	var workTime time.Time
 	if tokenType == "access" {
 		workTime = time.Now().Add(15 * time.Minute)
@@ -24,7 +34,7 @@ func GenerateToken(ctx context.Context, email, tokenType string) (string, error)
 		"exp":   workTime.Unix(),
 	})
 
-	strToken, err := token.SignedString([]byte("krabs_secret"))
+	strToken, err := token.SignedString([]byte(t.tokenSecret))
 	if err != nil {
 		return "", models.ServersError
 	}
@@ -32,8 +42,8 @@ func GenerateToken(ctx context.Context, email, tokenType string) (string, error)
 	return strToken, nil
 }
 
-func IsValidToken(strToken string) (bool, string, error) {
-	token, err := jwt.Parse(strToken, func(token *jwt.Token) (interface{}, error) { return []byte("krabs_secret"), nil })
+func (t *Token) IsValidToken(strToken string) (bool, string, error) {
+	token, err := jwt.Parse(strToken, func(token *jwt.Token) (interface{}, error) { return []byte(t.tokenSecret), nil })
 	if err != nil {
 		return false, "", models.ServersError
 	}

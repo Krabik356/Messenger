@@ -1,11 +1,13 @@
 package main
 
 import (
+	"Messenger/config"
 	"Messenger/internal/api"
 	"Messenger/internal/database"
 	"Messenger/internal/logger"
 	"Messenger/internal/redi"
 	"Messenger/internal/service"
+	"Messenger/internal/token"
 	"context"
 	"errors"
 	"net/http"
@@ -22,21 +24,25 @@ type Server struct {
 	router       *chi.Mux
 	database     *database.Database
 	redi         *redi.Redis
+	token        *token.Token
 	service      *service.Service
 	handler      *api.Handler
 	serverLogger *zap.Logger
 	startTime    time.Time
+	config       *config.Config
 }
 
 func NewServer() *Server {
+	config := config.NewConfigWithDataFromEnv()
 	logger := logger.NewLogger()
-	redi := redi.NewRedis()
-	database := database.NewDatabase()
-	service := service.NewService(database, redi)
+	redi := redi.NewRedis(config.GetRedisUrl())
+	database := database.NewDatabase(config.GetPostgresUrl())
+	token := token.NewToken(config.TokensSecret)
+	service := service.NewService(database, redi, token)
 	handler := api.NewHandler(service, logger.HttpLogger)
 	router := chi.NewRouter()
 	server := &http.Server{
-		Addr:    ":8080",
+		Addr:    config.ServerPort,
 		Handler: router,
 	}
 	return &Server{
@@ -47,6 +53,7 @@ func NewServer() *Server {
 		service:      service,
 		handler:      handler,
 		serverLogger: logger.ServerLogger,
+		config:       config,
 	}
 }
 

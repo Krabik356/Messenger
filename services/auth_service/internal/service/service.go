@@ -11,12 +11,14 @@ import (
 type Service struct {
 	database *database.Database
 	redi     *redi.Redis
+	tok      *token.Token
 }
 
-func NewService(database *database.Database, redi *redi.Redis) *Service {
+func NewService(database *database.Database, redi *redi.Redis, tok *token.Token) *Service {
 	return &Service{
 		database: database,
 		redi:     redi,
+		tok:      tok,
 	}
 }
 
@@ -26,11 +28,11 @@ func (s *Service) Close() error {
 }
 
 func (s *Service) GenerateJWTTokens(ctx context.Context, email string) (string, string, error) {
-	refreshToken, err := token.GenerateToken(ctx, email, "refresh")
+	refreshToken, err := s.tok.GenerateToken(ctx, email, "refresh")
 	if err != nil {
 		return "", "", err
 	}
-	accessToken, err := token.GenerateToken(ctx, email, "access")
+	accessToken, err := s.tok.GenerateToken(ctx, email, "access")
 	if err != nil {
 		return "", "", err
 	}
@@ -57,7 +59,7 @@ func (s *Service) Login(ctx context.Context, email, password string) (bool, erro
 }
 
 func (s *Service) IsValidToken(ctx context.Context, strToken string) (bool, string, error) {
-	isValid, email, err := token.IsValidToken(strToken)
+	isValid, email, err := s.tok.IsValidToken(strToken)
 	if err != nil {
 		return false, "", err
 	}

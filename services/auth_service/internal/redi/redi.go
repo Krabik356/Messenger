@@ -13,8 +13,8 @@ type Redis struct {
 	rdb *redis.Client
 }
 
-func NewRedis() *Redis {
-	rdb := redis.NewClient(&redis.Options{Addr: "localhost:6379"})
+func NewRedis(addr string) *Redis {
+	rdb := redis.NewClient(&redis.Options{Addr: addr})
 	return &Redis{
 		rdb: rdb,
 	}
