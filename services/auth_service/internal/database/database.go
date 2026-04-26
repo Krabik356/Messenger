@@ -6,6 +6,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -60,15 +61,18 @@ func (db *Database) Register(ctx context.Context, name, email, password string) 
 	return nil
 }
 
-func (db *Database) Login(ctx context.Context, email, password string) (bool, error) {
-	isExists := false
+func (db *Database) Login(ctx context.Context, email string) (string, error) {
+	var password string
 
 	ctxTime, stop := context.WithTimeout(ctx, 2*time.Second)
 	defer stop()
 
-	if err := db.pool.QueryRow(ctxTime, "SELECT EXISTS(SELECT TRUE FROM users WHERE email=$1 AND password=$2)", email, password).Scan(&isExists); err != nil {
-		return false, models.ServersError
+	if err := db.pool.QueryRow(ctxTime, "SELECT password FROM users WHERE email=$1", email).Scan(&password); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return "", models.UnknownUser
+		}
+		return "", models.ServersError
 	}
 
-	return isExists, nil
+	return password, nil
 }

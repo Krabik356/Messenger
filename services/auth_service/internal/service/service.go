@@ -6,6 +6,9 @@ import (
 	"Messenger/internal/redi"
 	"Messenger/internal/token"
 	"context"
+	"errors"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 type Service struct {
@@ -51,11 +54,27 @@ func (s *Service) Register(ctx context.Context, name, email, password string) er
 	} else if len(password) < 5 || len(password) > 20 {
 		return models.InvalidPassword
 	}
-	return s.database.Register(ctx, name, email, password)
+	hashPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return models.ServersError
+	}
+	return s.database.Register(ctx, name, email, string(hashPassword))
 }
 
 func (s *Service) Login(ctx context.Context, email, password string) (bool, error) {
-	return s.database.Login(ctx, email, password)
+	passwordFromDb, err := s.database.Login(ctx, email)
+	if err != nil {
+		return false, err
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(passwordFromDb), []byte(password)); err != nil {
+		if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
+			return false, nil
+		}
+		return false, models.ServersError
+	}
+
+	return true, nil
 }
 
 func (s *Service) IsValidToken(ctx context.Context, strToken string) (bool, string, error) {
