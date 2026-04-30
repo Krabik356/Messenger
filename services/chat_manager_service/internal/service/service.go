@@ -2,7 +2,7 @@ package service
 
 import (
 	"chat_manager_service/internal/database"
-	"chat_manager_service/token"
+	"chat_manager_service/internal/token"
 	"context"
 )
 

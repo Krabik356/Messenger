@@ -1,7 +1,7 @@
 package api
 
 import (
-	"chat_manager_service/models"
+	"chat_manager_service/internal/models"
 	"context"
 	"net/http"
 	"strings"
