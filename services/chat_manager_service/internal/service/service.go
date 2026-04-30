@@ -24,8 +24,8 @@ func (s *Service) Close() {
 	s.database.Close()
 }
 
-func (s *Service) CreateChat(ctx context.Context, creatorId, anotherId int) error {
-	return s.database.CreateChat(ctx, creatorId, anotherId)
+func (s *Service) CreateChat(ctx context.Context, creatorId, anotherId int, chatName string) error {
+	return s.database.CreateChat(ctx, creatorId, anotherId, chatName)
 }
 
 func (s *Service) IsValidToken(tokenString string) (int, bool, error) {

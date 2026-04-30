@@ -49,22 +49,38 @@ func (db *Database) AddNewUser(ctx context.Context, id int, email string) error 
 	return nil
 }
 
-func (db *Database) CreateChat(ctx context.Context, creatorId, anotherId int) error {
+func (db *Database) CreateChat(ctx context.Context, creatorId, anotherId int, chatName string) error {
 	ctxTime, stop := context.WithTimeout(ctx, 2*time.Second)
 	defer stop()
 
-	var existsId int
-	err := db.pool.QueryRow(ctxTime, "SELECT id FROM chats WHERE users_id=$1", []int{creatorId, anotherId}).Scan(&existsId)
-	if err != nil {
-		if !errors.Is(err, pgx.ErrNoRows) {
-			return models.ChatAlreadyExists
-		}
-	} else if err == nil {
+	var existsChatId int
+	err := db.pool.QueryRow(ctxTime, "SELECT chat_id FROM chat_users WHERE user_id IN ($1, $2) GROUP BY chat_id HAVING COUNT(*) = 2", creatorId, anotherId).Scan(&existsChatId)
+	if err == nil {
 		return models.ChatAlreadyExists
-	}
-
-	if _, err := db.pool.Exec(ctxTime, "INSERT INTO chats(users_id) VALUES($1)", []int{creatorId, anotherId}); err != nil {
+	} else if !errors.Is(err, pgx.ErrNoRows) {
 		return models.ServersError
 	}
-	return nil
+
+	ctxTx, stop := context.WithTimeout(ctx, 2*time.Second)
+	defer stop()
+
+	tx, err := db.pool.Begin(ctxTx)
+	if err != nil {
+		return models.ServersError
+	}
+	defer tx.Rollback(ctxTx)
+
+	var chatId int
+	err = tx.QueryRow(ctxTx, "INSERT INTO chats(name) VALUES($1) RETURNING id", chatName).Scan(&chatId)
+	if err != nil {
+		return models.ServersError
+	}
+	if _, err := tx.Exec(ctxTx, "INSERT INTO chat_users(chat_id, user_id) VALUES($1, $2)", chatId, creatorId); err != nil {
+		return models.ServersError
+	}
+	if _, err := tx.Exec(ctxTx, "INSERT INTO chat_users(chat_id, user_id) VALUES($1, $2)", chatId, anotherId); err != nil {
+		return models.ServersError
+	}
+
+	return tx.Commit(ctxTx)
 }

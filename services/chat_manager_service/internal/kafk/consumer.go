@@ -39,15 +39,17 @@ func NewConsumer(ctx context.Context, service *service.Service, consLogger *zap.
 	}
 }
 
+func (c *Consumer) Close() error {
+	return c.cons.Close()
+}
+
 func (c *Consumer) AddNewUser(msg *kafka.Message) error {
 	var userData models.AddNewUser
 	if err := json.Unmarshal(msg.Value, &userData); err != nil {
-		//log
 		return err
 	}
 
 	if err := c.service.AddNewUser(c.ctx, userData.Id, userData.Email); err != nil {
-		//log
 		return err
 	}
 	return nil

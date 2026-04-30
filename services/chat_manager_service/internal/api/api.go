@@ -27,7 +27,7 @@ func (h *Handler) CreateChat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.service.CreateChat(r.Context(), r.Context().Value("userID").(int), creationData.UserId); err != nil {
+	if err := h.service.CreateChat(r.Context(), r.Context().Value("userID").(int), creationData.UserId, creationData.ChatName); err != nil {
 		switch err {
 		case models.ServersError:
 			http.Error(w, err.Error(), 500)

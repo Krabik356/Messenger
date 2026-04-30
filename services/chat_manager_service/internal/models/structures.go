@@ -1,7 +1,8 @@
 package models
 
 type CreateChatRequest struct {
-	UserId int `json:"user_id"`
+	UserId   int    `json:"user_id"`
+	ChatName string `json:"chat_name"`
 }
 
 type CreateChatReturn struct {
