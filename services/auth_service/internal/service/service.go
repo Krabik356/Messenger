@@ -92,3 +92,11 @@ func (s *Service) IsValidToken(ctx context.Context, strToken string) (bool, stri
 	}
 	return isValid2, email, nil
 }
+
+func (s *Service) GetFromOutbox(ctx context.Context, num int) ([]models.RegForKafka, error) {
+	return s.database.GetFromOutbox(ctx, num)
+}
+
+func (s *Service) CommitOutboxByUserId(ctx context.Context, id int) error {
+	return s.database.CommitOutboxByUserId(ctx, id)
+}

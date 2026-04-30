@@ -29,11 +29,11 @@ func (db *Database) Close() {
 	db.pool.Close()
 }
 
-func (db *Database) AddNewUser(ctx context.Context, id int, email string) error {
+func (db *Database) AddNewUser(ctx context.Context, id int, name, email string) error {
 	ctxTime, stop := context.WithTimeout(ctx, 2*time.Second)
 	defer stop()
 
-	if _, err := db.pool.Exec(ctxTime, "INSERT INTO users(id, email) VALUES($1, $2)", id, email); err != nil {
+	if _, err := db.pool.Exec(ctxTime, "INSERT INTO users(id, name, email) VALUES($1, $2, $3)", id, name, email); err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, pgErr) {
 			switch pgErr.Code {

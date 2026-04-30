@@ -32,7 +32,7 @@ func (s *Service) IsValidToken(tokenString string) (int, bool, error) {
 	return s.token.IsValidToken(tokenString)
 }
 
-func (s *Service) AddNewUser(ctx context.Context, id int, email string) error {
+func (s *Service) AddNewUser(ctx context.Context, id int, name, email string) error {
 	if err := s.database.AddNewUser(ctx, id, email); err != nil {
 		return err
 	}

@@ -49,7 +49,7 @@ func (c *Consumer) AddNewUser(msg *kafka.Message) error {
 		return err
 	}
 
-	if err := c.service.AddNewUser(c.ctx, userData.Id, userData.Email); err != nil {
+	if err := c.service.AddNewUser(c.ctx, userData.Id, userData.Name, userData.Email); err != nil {
 		return err
 	}
 	return nil

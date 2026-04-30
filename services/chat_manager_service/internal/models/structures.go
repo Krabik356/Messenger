@@ -11,5 +11,6 @@ type CreateChatReturn struct {
 
 type AddNewUser struct {
 	Id    int    `json:"id"`
+	Name  string `json:"name"`
 	Email string `json:"email"`
 }

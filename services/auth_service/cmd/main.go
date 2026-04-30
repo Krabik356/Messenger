@@ -4,6 +4,7 @@ import (
 	"Messenger/config"
 	"Messenger/internal/api"
 	"Messenger/internal/database"
+	"Messenger/internal/kafk"
 	"Messenger/internal/logger"
 	"Messenger/internal/redi"
 	"Messenger/internal/service"
@@ -26,6 +27,7 @@ type Server struct {
 	handler      *api.Handler
 	serverLogger *zap.Logger
 	startTime    time.Time
+	producer     *kafk.Producer
 }
 
 func NewServer() *Server {
@@ -41,12 +43,14 @@ func NewServer() *Server {
 		Addr:    config.ServerPort,
 		Handler: router,
 	}
+	producer := kafk.NewProducer(service)
 	return &Server{
 		server:       server,
 		router:       router,
 		service:      service,
 		handler:      handler,
 		serverLogger: logger.ServerLogger,
+		producer:     producer,
 	}
 }
 
@@ -60,6 +64,8 @@ func (s *Server) Run() {
 	s.serverLogger.Info("server started",
 		zap.String("start_time", time.Now().Format(time.RFC3339)),
 	)
+	go s.producer.Produce()
+	go s.producer.EventListener()
 	if err := s.server.ListenAndServe(); err != nil {
 		if !errors.Is(err, http.ErrServerClosed) {
 			panic(err)
@@ -92,6 +98,8 @@ func (s *Server) Close() {
 		s.serverLogger.Error("server stopped", fields...)
 		return
 	}
+
+	s.producer.Close()
 	s.serverLogger.Info("server stopped", fields...)
 	//close everything
 }
