@@ -5,10 +5,13 @@ import (
 	"chat_manager_service/models"
 	"encoding/json"
 	"net/http"
+
+	"go.uber.org/zap"
 )
 
 type Handler struct {
-	service *service.Service
+	service    *service.Service
+	httpLogger *zap.Logger
 }
 
 func NewHandler(service *service.Service) *Handler {
