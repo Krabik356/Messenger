@@ -4,6 +4,8 @@ import (
 	"chat_manager_service/internal/database"
 	"chat_manager_service/internal/token"
 	"context"
+
+	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 )
 
 type Service struct {
@@ -11,7 +13,7 @@ type Service struct {
 	token    *token.Token
 }
 
-func NewService(database *database.Database, token *token.Token) *Service {
+func NewService(database *database.Database, token *token.Token, cons *kafka.Consumer) *Service {
 	return &Service{
 		database: database,
 		token:    token,
@@ -28,4 +30,11 @@ func (s *Service) CreateChat(ctx context.Context, creatorId, anotherId int) erro
 
 func (s *Service) IsValidToken(tokenString string) (int, bool, error) {
 	return s.token.IsValidToken(tokenString)
+}
+
+func (s *Service) AddNewUser(ctx context.Context, id int, email string) error {
+	if err := s.database.AddNewUser(ctx, id, email); err != nil {
+		return err
+	}
+	return nil
 }

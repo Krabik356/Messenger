@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -26,6 +27,26 @@ func NewDatabase(ctx context.Context) *Database {
 
 func (db *Database) Close() {
 	db.pool.Close()
+}
+
+func (db *Database) AddNewUser(ctx context.Context, id int, email string) error {
+	ctxTime, stop := context.WithTimeout(ctx, 2*time.Second)
+	defer stop()
+
+	if _, err := db.pool.Exec(ctxTime, "INSERT INTO users(id, email) VALUES($1, $2)", id, email); err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, pgErr) {
+			switch pgErr.Code {
+			case "23505":
+				return models.AlreadyExists
+			default:
+				return models.ServersError
+			}
+		}
+		return models.ServersError
+	}
+
+	return nil
 }
 
 func (db *Database) CreateChat(ctx context.Context, creatorId, anotherId int) error {
