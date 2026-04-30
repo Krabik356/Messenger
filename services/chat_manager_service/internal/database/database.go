@@ -33,10 +33,13 @@ func (db *Database) CreateChat(ctx context.Context, creatorId, anotherId int) er
 	defer stop()
 
 	var existsId int
-	if err := db.pool.QueryRow(ctxTime, "SELECT id FROM chars WHERE users_id=$1", []int{creatorId, anotherId}).Scan(&existsId); err != nil {
+	err := db.pool.QueryRow(ctxTime, "SELECT id FROM chats WHERE users_id=$1", []int{creatorId, anotherId}).Scan(&existsId)
+	if err != nil {
 		if !errors.Is(err, pgx.ErrNoRows) {
 			return models.ChatAlreadyExists
 		}
+	} else if err == nil {
+		return models.ChatAlreadyExists
 	}
 
 	if _, err := db.pool.Exec(ctxTime, "INSERT INTO chats(users_id) VALUES($1)", []int{creatorId, anotherId}); err != nil {
