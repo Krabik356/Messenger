@@ -24,6 +24,10 @@ func (tok *Token) IsValidToken(tokenString string) (int, bool, error) {
 		return 0, false, models.ServersError
 	}
 
+	if t.Method != jwt.SigningMethodHS256 {
+		return 0, false, models.InvalidToken
+	}
+
 	if !t.Valid {
 		return 0, false, nil
 	}
