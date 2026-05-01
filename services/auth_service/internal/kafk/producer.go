@@ -20,9 +20,9 @@ type Producer struct {
 	stopCtx        context.CancelFunc
 }
 
-func NewProducer(service *service.Service, producerLogger *zap.Logger) *Producer {
+func NewProducer(addr string, service *service.Service, producerLogger *zap.Logger) *Producer {
 	prod, err := kafka.NewProducer(&kafka.ConfigMap{
-		"bootstrap.servers":  "localhost:",
+		"bootstrap.servers":  addr,
 		"acks":               "all",
 		"enable.idempotence": true,
 	})

@@ -19,6 +19,10 @@ type Config struct {
 		PostgresPort         string
 		PostgresDatabaseName string
 	}
+	Producer struct {
+		ProcuerAddress string
+		ProcuerPort    string
+	}
 }
 
 func NewConfigWithDataFromEnv() *Config {
@@ -45,6 +49,13 @@ func NewConfigWithDataFromEnv() *Config {
 			PostgresPort:         os.Getenv("POSTGRESPORT"),
 			PostgresDatabaseName: os.Getenv("POSTGRESDATABASENAME"),
 		},
+		Producer: struct {
+			ProcuerAddress string
+			ProcuerPort    string
+		}{
+			ProcuerAddress: os.Getenv("PROCUERADDRESS"),
+			ProcuerPort:    os.Getenv("PROCUERPORT"),
+		},
 	}
 }
 
@@ -54,4 +65,8 @@ func (c *Config) GetRedisUrl() string {
 
 func (c *Config) GetPostgresUrl() string {
 	return fmt.Sprintf("postgres://%s:%s@%s:%s/%s", c.Postgres.PostgresUser, c.Postgres.PostgresPassword, c.Postgres.PostgresAddress, c.Postgres.PostgresPort, c.Postgres.PostgresDatabaseName)
+}
+
+func (c *Config) GetProducerUrl() string {
+	return fmt.Sprint("%s, %s", c.Producer.ProcuerAddress, c.Producer.ProcuerPort)
 }
