@@ -20,7 +20,7 @@ type Producer struct {
 	stopCtx        context.CancelFunc
 }
 
-func NewProducer(service *service.Service) *Producer {
+func NewProducer(service *service.Service, producerLogger *zap.Logger) *Producer {
 	prod, err := kafka.NewProducer(&kafka.ConfigMap{
 		"bootstrap.servers":  "localhost:",
 		"acks":               "all",
@@ -31,10 +31,11 @@ func NewProducer(service *service.Service) *Producer {
 	}
 	ctx, stop := context.WithCancel(context.Background())
 	return &Producer{
-		prod:    prod,
-		service: service,
-		ctx:     ctx,
-		stopCtx: stop,
+		prod:           prod,
+		service:        service,
+		producerLogger: producerLogger,
+		ctx:            ctx,
+		stopCtx:        stop,
 	}
 }
 

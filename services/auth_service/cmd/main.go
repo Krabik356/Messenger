@@ -43,7 +43,7 @@ func NewServer() *Server {
 		Addr:    config.ServerPort,
 		Handler: router,
 	}
-	producer := kafk.NewProducer(service)
+	producer := kafk.NewProducer(service, logger.ProducerLogger)
 	return &Server{
 		server:       server,
 		router:       router,
