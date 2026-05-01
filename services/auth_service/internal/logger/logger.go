@@ -5,8 +5,9 @@ import (
 )
 
 type Logger struct {
-	HttpLogger   *zap.Logger
-	ServerLogger *zap.Logger
+	HttpLogger     *zap.Logger
+	ServerLogger   *zap.Logger
+	ProducerLogger *zap.Logger
 }
 
 func NewLogger() *Logger {
@@ -18,7 +19,8 @@ func NewLogger() *Logger {
 	}
 
 	return &Logger{
-		HttpLogger:   logger.With(zap.String("layer", "http")),
-		ServerLogger: logger.With(zap.String("layer", "server")),
+		HttpLogger:     logger.With(zap.String("layer", "http")),
+		ServerLogger:   logger.With(zap.String("layer", "server")),
+		ProducerLogger: logger.With(zap.String("layer", "producer")),
 	}
 }

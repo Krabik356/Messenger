@@ -9,13 +9,15 @@ import (
 	"time"
 
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
+	"go.uber.org/zap"
 )
 
 type Producer struct {
-	prod    *kafka.Producer
-	service *service.Service
-	ctx     context.Context
-	stopCtx context.CancelFunc
+	prod           *kafka.Producer
+	service        *service.Service
+	producerLogger *zap.Logger
+	ctx            context.Context
+	stopCtx        context.CancelFunc
 }
 
 func NewProducer(service *service.Service) *Producer {
@@ -40,6 +42,20 @@ func (p *Producer) Close() {
 	p.prod.Flush(5000)
 	p.prod.Close()
 	p.stopCtx()
+}
+
+func (p *Producer) logProducer(key, status, err string) {
+	if err != "" {
+		p.producerLogger.Error("log",
+			zap.String("key", key),
+			zap.String("status", status),
+			zap.String("error", err))
+		return
+	}
+	p.producerLogger.Info("log",
+		zap.String("key", key),
+		zap.String("status", status),
+		zap.String("error", "nil"))
 }
 
 func (p *Producer) ProduceNewUser(id int, name, email string) error {
@@ -76,7 +92,7 @@ func (p *Producer) Produce() {
 			}
 			for _, user := range data {
 				if err := p.ProduceNewUser(user.Id, user.Name, user.Email); err != nil {
-					//log
+					p.logProducer(string(user.Id), "error_on_producing", err.Error())
 					continue
 				}
 			}
@@ -90,25 +106,28 @@ func (p *Producer) EventListener() {
 		case <-p.ctx.Done():
 			return
 		case e := <-p.prod.Events():
+			var stringId string
 			switch ev := e.(type) {
 			case *kafka.Message:
+				stringId = string(ev.Key)
 				if ev.TopicPartition.Error != nil {
-					//log
+					p.logProducer(stringId, "error_on_sending", ev.TopicPartition.Error.Error())
 					continue
 				}
-				id, err := strconv.Atoi(string(ev.Key))
+				id, err := strconv.Atoi(stringId)
 				if err != nil {
-					//log
+					p.logProducer(stringId, "error_on_id_parsing", err.Error())
 					continue
 				}
 				if err := p.service.CommitOutboxByUserId(p.ctx, id); err != nil {
-					//log
+					p.logProducer(stringId, "error_on_commiting", err.Error())
 					continue
 				}
 			case kafka.Error:
-				//log
+				p.logProducer("-", "error_on_connecting", ev.Error())
 				continue
 			}
+			p.logProducer(stringId, "success", "")
 		}
 	}
 }
