@@ -84,3 +84,17 @@ func (db *Database) CreateChat(ctx context.Context, creatorId, anotherId int, ch
 
 	return tx.Commit(ctxTx)
 }
+
+func (db *Database) SendMessage(ctx context.Context, chatId, userId int, message string) (int, error) {
+	ctxTime, stop := context.WithTimeout(ctx, 2*time.Second)
+	defer stop()
+
+	var id int
+	if err := db.pool.QueryRow(ctxTime, "INSERT INTO chat_messages(chat_id, user_id, msg) SELECT $1, $2, $3 WHERE EXISTS(SELECT TRUE FROM chat_users WHERE chat_id=$1 AND user_id=$2) RETURNING id", chatId, userId, message).Scan(&id); err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return 0, models.NoUserInChat
+		}
+		return 0, models.ServersError
+	}
+	return id, nil
+}

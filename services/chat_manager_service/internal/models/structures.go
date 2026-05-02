@@ -14,3 +14,14 @@ type AddNewUser struct {
 	Name  string `json:"name"`
 	Email string `json:"email"`
 }
+
+type SendMessageRequest struct {
+	Id      int    `json:"id"`
+	ChatId  int    `json:"chatId"`
+	Message string `json:"message"`
+}
+
+type SendMessageReturn struct {
+	Status    string `json:"status"`
+	MessageId int    `json:"message_id"`
+}

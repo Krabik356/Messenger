@@ -35,3 +35,7 @@ func (s *Service) IsValidToken(tokenString string) (int, bool, error) {
 func (s *Service) AddNewUser(ctx context.Context, id int, name, email string) error {
 	return s.database.AddNewUser(ctx, id, name, email)
 }
+
+func (s *Service) SendMessage(ctx context.Context, chatId, userId int, message string) (int, error) {
+	return s.database.SendMessage(ctx, chatId, userId, message)
+}

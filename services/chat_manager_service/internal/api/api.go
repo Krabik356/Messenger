@@ -46,3 +46,34 @@ func (h *Handler) CreateChat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 }
+
+func (h *Handler) SendMessage(w http.ResponseWriter, r *http.Request) {
+	var sendData models.SendMessageRequest
+	if err := json.NewDecoder(r.Body).Decode(&sendData); err != nil {
+		http.Error(w, models.InvalidData.Error(), 400)
+		return
+	}
+
+	id, err := h.service.SendMessage(r.Context(), sendData.ChatId, sendData.Id, sendData.Message)
+	if err != nil {
+		switch err {
+		case models.ServersError:
+			http.Error(w, err.Error(), 500)
+		case models.NoUserInChat:
+			http.Error(w, err.Error(), 404)
+		default:
+			http.Error(w, models.ServersError.Error(), 500)
+		}
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	if err := json.NewEncoder(w).Encode(models.SendMessageReturn{
+		Status:    "success",
+		MessageId: id,
+	}); err != nil {
+		http.Error(w, models.ServersError.Error(), 500)
+		return
+	}
+}
