@@ -14,9 +14,10 @@ type Handler struct {
 	httpLogger *zap.Logger
 }
 
-func NewHandler(service *service.Service) *Handler {
+func NewHandler(service *service.Service, httpLogger *zap.Logger) *Handler {
 	return &Handler{
-		service: service,
+		service:    service,
+		httpLogger: httpLogger,
 	}
 }
 

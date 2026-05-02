@@ -18,9 +18,9 @@ type Consumer struct {
 	ctx        context.Context
 }
 
-func NewConsumer(ctx context.Context, service *service.Service, consLogger *zap.Logger) *Consumer {
+func NewConsumer(ctx context.Context, service *service.Service, consLogger *zap.Logger, addr string) *Consumer {
 	cons, err := kafka.NewConsumer(&kafka.ConfigMap{
-		"bootstrap.servers":  "localhost:9091",
+		"bootstrap.servers":  addr,
 		"group.id":           "chat_manager",
 		"enable.auto.commit": false,
 		"auto.offset.reset":  true,

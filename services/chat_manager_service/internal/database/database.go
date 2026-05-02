@@ -15,8 +15,8 @@ type Database struct {
 	pool *pgxpool.Pool
 }
 
-func NewDatabase(ctx context.Context) *Database {
-	pool, err := pgxpool.New(ctx, "postgres://postgres:111222035@localhost:5432/check")
+func NewDatabase(addr string) *Database {
+	pool, err := pgxpool.New(context.Background(), addr)
 	if err != nil {
 		panic(err)
 	}

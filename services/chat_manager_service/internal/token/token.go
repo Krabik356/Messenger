@@ -9,14 +9,17 @@ import (
 )
 
 type Token struct {
+	secret string
 }
 
-func NewToken() *Token {
-	return &Token{}
+func NewToken(secret string) *Token {
+	return &Token{
+		secret: secret,
+	}
 }
 
 func (tok *Token) IsValidToken(tokenString string) (int, bool, error) {
-	t, err := jwt.Parse(tokenString, func(t *jwt.Token) (interface{}, error) { return []byte("kraby_secret"), nil })
+	t, err := jwt.Parse(tokenString, func(t *jwt.Token) (interface{}, error) { return []byte(tok.secret), nil })
 	if err != nil {
 		if errors.Is(err, jwt.ErrTokenExpired) {
 			return 0, false, models.ExpiredToken
