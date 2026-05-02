@@ -20,7 +20,7 @@ type Consumer struct {
 
 func NewConsumer(ctx context.Context, service *service.Service, consLogger *zap.Logger) *Consumer {
 	cons, err := kafka.NewConsumer(&kafka.ConfigMap{
-		"bootstrap.servers":  "localhost:",
+		"bootstrap.servers":  "localhost:9091",
 		"group.id":           "chat_manager",
 		"enable.auto.commit": false,
 		"auto.offset.reset":  true,
@@ -41,6 +41,20 @@ func NewConsumer(ctx context.Context, service *service.Service, consLogger *zap.
 
 func (c *Consumer) Close() error {
 	return c.cons.Close()
+}
+
+func (c *Consumer) logConsumer(key, status, err string) {
+	if err != "" {
+		c.consLogger.Error("log",
+			zap.String("key", key),
+			zap.String("status", status),
+			zap.String("error", err))
+		return
+	}
+	c.consLogger.Info("log",
+		zap.String("key", key),
+		zap.String("status", status),
+		zap.String("error", "nil"))
 }
 
 func (c *Consumer) AddNewUser(msg *kafka.Message) error {
@@ -64,7 +78,7 @@ func (c *Consumer) Consume() {
 			time.Sleep(500 * time.Millisecond)
 			msg, err := c.cons.ReadMessage(-1)
 			if err != nil {
-				//log
+				c.logConsumer("-", "error", err.Error())
 				continue
 			}
 
@@ -74,10 +88,12 @@ func (c *Consumer) Consume() {
 			default:
 			}
 			if err != nil {
-				//log
+				c.logConsumer(string(msg.Key), "error", err.Error())
+				continue
 			}
 			if _, err := c.cons.CommitMessage(msg); err != nil {
-				//log
+				c.logConsumer(string(msg.Key), "error", err.Error())
+				continue
 			}
 		}
 	}

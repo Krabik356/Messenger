@@ -5,6 +5,7 @@ import "go.uber.org/zap"
 type Logger struct {
 	HttpLogger   *zap.Logger
 	ServerLogger *zap.Logger
+	ConsLogger   *zap.Logger
 }
 
 func createLoggerWithLayer(layer string) *zap.Logger {
@@ -22,5 +23,6 @@ func NewLogger() *Logger {
 	return &Logger{
 		HttpLogger:   createLoggerWithLayer("http"),
 		ServerLogger: createLoggerWithLayer("server"),
+		ConsLogger:   createLoggerWithLayer("consumer"),
 	}
 }

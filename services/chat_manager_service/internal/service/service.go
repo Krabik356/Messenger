@@ -33,8 +33,5 @@ func (s *Service) IsValidToken(tokenString string) (int, bool, error) {
 }
 
 func (s *Service) AddNewUser(ctx context.Context, id int, name, email string) error {
-	if err := s.database.AddNewUser(ctx, id, email); err != nil {
-		return err
-	}
-	return nil
+	return s.database.AddNewUser(ctx, id, name, email)
 }
