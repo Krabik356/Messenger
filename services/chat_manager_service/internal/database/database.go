@@ -35,7 +35,7 @@ func (db *Database) AddNewUser(ctx context.Context, id int, name, email string) 
 
 	if _, err := db.pool.Exec(ctxTime, "INSERT INTO users(id, name, email) VALUES($1, $2, $3)", id, name, email); err != nil {
 		var pgErr *pgconn.PgError
-		if errors.As(err, pgErr) {
+		if errors.As(err, &pgErr) {
 			switch pgErr.Code {
 			case "23505":
 				return models.AlreadyExists

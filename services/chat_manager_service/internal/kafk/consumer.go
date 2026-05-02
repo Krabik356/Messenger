@@ -23,7 +23,7 @@ func NewConsumer(ctx context.Context, service *service.Service, consLogger *zap.
 		"bootstrap.servers":  addr,
 		"group.id":           "chat_manager",
 		"enable.auto.commit": false,
-		"auto.offset.reset":  true,
+		"auto.offset.reset":  "earliest",
 	})
 	if err != nil {
 		panic(err)

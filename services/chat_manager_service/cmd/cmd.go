@@ -1,4 +1,4 @@
-package main
+package cmd
 
 import (
 	"chat_manager_service/config"
