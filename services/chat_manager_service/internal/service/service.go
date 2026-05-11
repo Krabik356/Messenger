@@ -42,3 +42,7 @@ func (s *Service) SendMessage(ctx context.Context, chatId, userId int, message s
 func (s *Service) GetUsersData(ctx context.Context, id int) (models.GetUsersDataResponse, error) {
 	return s.database.GetUsersData(ctx, id)
 }
+
+func (s *Service) GetChatsMessages(ctx context.Context, chatId, offset int) ([]models.Message, error) {
+	return s.database.GetChatsMessages(ctx, chatId, offset)
+}

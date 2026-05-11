@@ -116,13 +116,12 @@ func (db *Database) GetUsersData(ctx context.Context, id int) (models.GetUsersDa
 		WHERE cu.user_id=$1
 		GROUP BY cu.chat_id, ch.name
 
-	`)
+	`, id)
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return models.GetUsersDataResponse{}, models.NoChatWithId
-		}
 		return models.GetUsersDataResponse{}, models.ServersError
 	}
+
+	defer data.Close()
 
 	var result models.GetUsersDataResponse
 	for data.Next() {
@@ -135,6 +134,9 @@ func (db *Database) GetUsersData(ctx context.Context, id int) (models.GetUsersDa
 			messages              []byte
 		)
 		if err := data.Scan(&chatId, &chatName, &chatUsers, &messages); err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return models.GetUsersDataResponse{}, models.EmptyChat
+			}
 			return models.GetUsersDataResponse{}, models.ServersError
 		}
 
@@ -156,4 +158,57 @@ func (db *Database) GetUsersData(ctx context.Context, id int) (models.GetUsersDa
 
 	return result, nil
 
+}
+
+func (db *Database) GetChatsMessages(ctx context.Context, chatId, offset int) ([]models.Message, error) {
+	ctxTime, stop := context.WithTimeout(ctx, 2*time.Second)
+	defer stop()
+
+	data, err := db.pool.Query(ctxTime, `
+
+		SELECT m.id, m.msg, JSONB_BUILD_OBJECT('id', u.id,'name', u.name,'email', u.email) 
+		FROM chat_messages AS m
+		JOIN users AS u ON u.id=m.user_id
+		WHERE m.chat_id=$1
+		OFFSET $2
+		LIMIT 50
+		ORDER BY m.id DESC
+
+	`, chatId, offset)
+
+	if err != nil {
+		return nil, models.ServersError
+	}
+
+	defer data.Close()
+
+	var result []models.Message
+
+	for data.Next() {
+		var (
+			msgId   int
+			msgText string
+			rawUser []byte
+			user    models.User
+		)
+
+		if err := data.Scan(&msgId, &msgText, &rawUser); err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return nil, models.NoOldMessages
+			}
+			return nil, models.ServersError
+		}
+
+		if err := json.Unmarshal(rawUser, &user); err != nil {
+			return nil, models.ServersError
+		}
+
+		result = append(result, models.Message{
+			Id:   msgId,
+			User: user,
+			Text: msgText,
+		})
+	}
+
+	return result, nil
 }

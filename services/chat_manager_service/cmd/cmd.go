@@ -59,6 +59,7 @@ func (s *Server) Run() {
 	s.router.Use(s.handler.Authorization)
 	s.router.Post("/create_chat", s.handler.CreateChat)
 	s.router.Post("/send_message", s.handler.SendMessage)
+	s.router.Get("/get_data", s.handler.SendMessage)
 	go s.consumer.Consume()
 
 	s.serverLogger.Info("server started",

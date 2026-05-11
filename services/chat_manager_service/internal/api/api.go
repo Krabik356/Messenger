@@ -5,7 +5,9 @@ import (
 	"chat_manager_service/internal/service"
 	"encoding/json"
 	"net/http"
+	"strconv"
 
+	"github.com/go-chi/chi/v5"
 	"go.uber.org/zap"
 )
 
@@ -80,7 +82,7 @@ func (h *Handler) SendMessage(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) GetUsersData(w http.ResponseWriter, r *http.Request) {
-	
+
 	userid, ok := r.Context().Value("id").(int)
 	if !ok {
 		http.Error(w, models.ServersError.Error(), 404)
@@ -90,7 +92,7 @@ func (h *Handler) GetUsersData(w http.ResponseWriter, r *http.Request) {
 	data, err := h.service.GetUsersData(r.Context(), userid)
 	if err != nil {
 		switch err {
-		case models.NoUserInChat:
+		case models.EmptyChat:
 			http.Error(w, err.Error(), 409)
 		default:
 			http.Error(w, err.Error(), 500)
@@ -98,9 +100,45 @@ func (h *Handler) GetUsersData(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
 	if err := json.NewEncoder(w).Encode(data); err != nil {
 		http.Error(w, err.Error(), 500)
 		return
 	}
 
+}
+
+func (h *Handler) GetChatsMessages(w http.ResponseWriter, r *http.Request) {
+	chatId, err := strconv.Atoi(chi.URLParam(r, "chat_id"))
+	if err != nil {
+		http.Error(w, models.ServersError.Error(), 500)
+		return
+	}
+
+	offset, err := strconv.Atoi(chi.URLParam(r, "offset"))
+	if err != nil {
+		http.Error(w, models.ServersError.Error(), 500)
+		return
+	}
+
+	messages, err := h.service.GetChatsMessages(r.Context(), chatId, offset)
+	if err != nil {
+		switch err {
+		case models.NoOldMessages:
+			http.Error(w, err.Error(), 409)
+		default:
+			http.Error(w, err.Error(), 500)
+		}
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	if err := json.NewEncoder(w).Encode(models.MessageSlice{
+		Messages: messages,
+	}); err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
 }
