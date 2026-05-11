@@ -2,6 +2,7 @@ package service
 
 import (
 	"chat_manager_service/internal/database"
+	"chat_manager_service/internal/models"
 	"chat_manager_service/internal/token"
 	"context"
 )
@@ -36,4 +37,8 @@ func (s *Service) AddNewUser(ctx context.Context, id int, name, email string) er
 
 func (s *Service) SendMessage(ctx context.Context, chatId, userId int, message string) (int, error) {
 	return s.database.SendMessage(ctx, chatId, userId, message)
+}
+
+func (s *Service) GetUsersData(ctx context.Context, id int) (models.GetUsersDataResponse, error) {
+	return s.database.GetUsersData(ctx, id)
 }

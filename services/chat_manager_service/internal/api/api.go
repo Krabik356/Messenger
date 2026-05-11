@@ -78,3 +78,29 @@ func (h *Handler) SendMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 }
+
+func (h *Handler) GetUsersData(w http.ResponseWriter, r *http.Request) {
+	
+	userid, ok := r.Context().Value("id").(int)
+	if !ok {
+		http.Error(w, models.ServersError.Error(), 404)
+		return
+	}
+
+	data, err := h.service.GetUsersData(r.Context(), userid)
+	if err != nil {
+		switch err {
+		case models.NoUserInChat:
+			http.Error(w, err.Error(), 409)
+		default:
+			http.Error(w, err.Error(), 500)
+		}
+		return
+	}
+
+	if err := json.NewEncoder(w).Encode(data); err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+
+}
