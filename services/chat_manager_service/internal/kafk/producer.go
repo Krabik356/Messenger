@@ -9,13 +9,15 @@ import (
 	"time"
 
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
+	"go.uber.org/zap"
 )
 
 type Producer struct {
-	prod    *kafka.Producer
-	service *service.Service
-	ctx     context.Context
-	stopCtx context.CancelFunc
+	prod       *kafka.Producer
+	service    *service.Service
+	ctx        context.Context
+	stopCtx    context.CancelFunc
+	prodLogger *zap.Logger
 }
 
 func NewProducer(service *service.Service) *Producer {
@@ -40,6 +42,20 @@ func (p *Producer) Close() {
 	p.prod.Flush(5000)
 	p.prod.Close()
 	p.stopCtx()
+}
+
+func (p *Producer) logProducer(key, status, err string) {
+	if err != "" {
+		p.prodLogger.Error("log",
+			zap.String("key", key),
+			zap.String("status", status),
+			zap.String("error", err))
+		return
+	}
+	p.prodLogger.Info("log",
+		zap.String("key", key),
+		zap.String("status", status),
+		zap.String("error", "nil"))
 }
 
 func (p *Producer) ProduceNewMessage(rawMsg models.Message) error {
@@ -71,12 +87,12 @@ func (p *Producer) Produce() {
 			time.Sleep(500 * time.Millisecond)
 			messages, err := p.service.GetFromOutbox(p.ctx)
 			if err != nil {
-				//log
+				p.logProducer("-", "error", err.Error())
 			}
 
 			for _, msg := range messages {
 				if err := p.ProduceNewMessage(msg); err != nil {
-					//log
+					p.logProducer(strconv.Itoa(msg.Id), "error", err.Error())
 				}
 			}
 
@@ -93,23 +109,23 @@ func (p *Producer) EventListener() {
 			switch ev := e.(type) {
 			case *kafka.Message:
 				if ev.TopicPartition.Error != nil {
-					//log
+					p.logProducer(string(ev.Key), "error", "error with sending")
 					continue
 				}
 				id, err := strconv.Atoi(string(ev.Key))
 				if err != nil {
-					//log
+					p.logProducer(string(ev.Key), "error", "error with converting id to int")
 					continue
 				}
 				if err := p.service.CommitMessage(p.ctx, id); err != nil {
-					//log
+					p.logProducer(string(ev.Key), "error", "error with commiting")
 					continue
 				}
+				p.logProducer(string(ev.Key), "", "success")
 			case kafka.Error:
-				//log
+				p.logProducer("-", "error", ev.Error())
 				continue
 			}
-			//log
 		}
 	}
 }

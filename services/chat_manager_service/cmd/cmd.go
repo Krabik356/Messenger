@@ -26,6 +26,7 @@ type Server struct {
 	service      *service.Service
 	serverLogger *zap.Logger
 	consumer     *kafk.Consumer
+	producer     *kafk.Producer
 	startTime    time.Time
 }
 
@@ -37,6 +38,7 @@ func NewServer(ctx context.Context) *Server {
 	database := database.NewDatabase(config.GetPostgresUrl())
 	service := service.NewService(database, token)
 	consumer := kafk.NewConsumer(ctx, service, logger.ConsLogger, config.GetConsumerUrl())
+	producer := kafk.NewProducer(service)
 	handler := api.NewHandler(service, logger.HttpLogger)
 	server := &http.Server{
 		Addr:    config.GetServerUrl(),
@@ -50,6 +52,7 @@ func NewServer(ctx context.Context) *Server {
 		service:      service,
 		serverLogger: logger.ServerLogger,
 		consumer:     consumer,
+		producer:     producer,
 	}
 }
 
@@ -61,6 +64,8 @@ func (s *Server) Run() {
 	s.router.Post("/send_message", s.handler.SendMessage)
 	s.router.Get("/get_data", s.handler.GetUsersData)
 	s.router.Get("/get_messages/{chat_id}", s.handler.GetChatsMessages)
+	go s.producer.Produce()
+	go s.producer.EventListener()
 	go s.consumer.Consume()
 
 	s.serverLogger.Info("server started",
