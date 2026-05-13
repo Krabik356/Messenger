@@ -90,14 +90,24 @@ func (db *Database) SendMessage(ctx context.Context, chatId, userId int, message
 	ctxTime, stop := context.WithTimeout(ctx, 2*time.Second)
 	defer stop()
 
+	tx, err := db.pool.Begin(ctxTime)
+	if err != nil {
+		return 0, models.ServersError
+	}
+	defer tx.Rollback(ctxTime)
+
 	var id int
-	if err := db.pool.QueryRow(ctxTime, "INSERT INTO chat_messages(chat_id, user_id, msg) SELECT $1, $2, $3 WHERE EXISTS(SELECT TRUE FROM chat_users WHERE chat_id=$1 AND user_id=$2) RETURNING id", chatId, userId, message).Scan(&id); err != nil {
+	if err := tx.QueryRow(ctxTime, "INSERT INTO chat_messages(chat_id, user_id, msg) SELECT $1, $2, $3 WHERE EXISTS(SELECT TRUE FROM chat_users WHERE chat_id=$1 AND user_id=$2) RETURNING id", chatId, userId, message).Scan(&id); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return 0, models.NoUserInChat
 		}
 		return 0, models.ServersError
 	}
-	return id, nil
+	if _, err := tx.Exec(ctxTime, "INSERT INTO OUTBOX(msg_id, user_id, user_name, user_email, msg, status, topic) SELECT $1, $2, users.name, users.email $3, $4, $5 FROM users WHERE users.id=$2", id, userId, message, "waiting", "messages"); err != nil {
+		return 0, models.ServersError
+	}
+
+	return id, tx.Commit(ctxTime)
 }
 
 func (db *Database) GetUsersData(ctx context.Context, id int) (models.GetUsersDataResponse, error) {
@@ -211,4 +221,52 @@ func (db *Database) GetChatsMessages(ctx context.Context, chatId, offset int) ([
 	}
 
 	return result, nil
+}
+
+func (db *Database) GetFromOutbox(ctx context.Context) ([]models.Message, error) {
+	ctxTime, stop := context.WithTimeout(ctx, 2*time.Second)
+	defer stop()
+
+	data, err := db.pool.Query(ctxTime, "SELECT * FROM outbox WHERE status=$1 AND topic=$2 LIMIT 50", "waiting", "messages")
+	if err != nil {
+		return nil, models.ServersError
+	}
+	defer data.Close()
+
+	var result []models.Message
+	for data.Next() {
+		var (
+			msgId     int
+			userId    int
+			userName  string
+			userEmail string
+			msg       string
+		)
+
+		if err := data.Scan(&msgId, &userId, &userName, &userEmail, &msg); err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return nil, nil
+			}
+			return nil, models.ServersError
+		}
+
+		result = append(result, models.Message{msgId, models.User{userId, userName, userEmail}, msg})
+	}
+
+	return result, nil
+}
+
+func (db *Database) CommitMessage(ctx context.Context, msgId int) error {
+	ctxTime, stop := context.WithTimeout(ctx, 2*time.Second)
+	defer stop()
+
+	rowsAffected, err := db.pool.Exec(ctxTime, "UPDATE outbox SET status=$1 WHERE msg_id=$2", "sended", msgId)
+	if err != nil {
+		return models.ServersError
+	}
+	if rowsAffected.RowsAffected() == 0 {
+		return models.ServersError
+	}
+
+	return nil
 }

@@ -46,3 +46,11 @@ func (s *Service) GetUsersData(ctx context.Context, id int) (models.GetUsersData
 func (s *Service) GetChatsMessages(ctx context.Context, chatId, offset int) ([]models.Message, error) {
 	return s.database.GetChatsMessages(ctx, chatId, offset)
 }
+
+func (s *Service) GetFromOutbox(ctx context.Context) ([]models.Message, error) {
+	return s.database.GetFromOutbox(ctx)
+}
+
+func (s *Service) CommitMessage(ctx context.Context, msgId int) error {
+	return s.database.CommitMessage(ctx, msgId)
+}
