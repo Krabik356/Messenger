@@ -5,7 +5,6 @@ import (
 	"chat_manager_service/internal/service"
 	"context"
 	"encoding/json"
-	"time"
 
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	"go.uber.org/zap"
@@ -75,7 +74,6 @@ func (c *Consumer) Consume() {
 		case <-c.ctx.Done():
 			return
 		default:
-			time.Sleep(500 * time.Millisecond)
 			msg, err := c.cons.ReadMessage(-1)
 			if err != nil {
 				c.logConsumer("-", "error", err.Error())
